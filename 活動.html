@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活動建立 - Badminton Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-4 bg-slate-50 min-h-screen">
+    <div class="max-w-md mx-auto">
+        <h2 class="text-xl font-black italic text-slate-800 uppercase mb-6">Create Event</h2>
+
+        <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 space-y-4">
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-1 block">Date / 日期</label>
+                <input type="date" id="actDate" class="w-full bg-slate-50 p-4 rounded-2xl outline-none font-bold text-sm">
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-1 block">Time / 時段</label>
+                <select id="actTime" class="w-full bg-slate-50 p-4 rounded-2xl outline-none font-bold text-sm appearance-none">
+                    <option value="早場 (08:00-12:00)">早場 (08:00-12:00)</option>
+                    <option value="午場 (13:00-17:00)">午場 (13:00-17:00)</option>
+                    <option value="晚場 (18:00-22:00)">晚場 (18:00-22:00)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-1 block">Member / 參加人員</label>
+                <select id="actMember" class="w-full bg-slate-50 p-4 rounded-2xl outline-none font-bold text-sm appearance-none">
+                    <option value="">載入人員名單中...</option>
+                </select>
+            </div>
+
+            <button onclick="saveActivity()" id="saveBtn" class="w-full bg-slate-800 text-white p-5 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-all">
+                確認建立活動
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const ACTIVITY_GAS_URL = "https://script.google.com/macros/s/AKfycbyrT9Pd4Ry2dNDhP3fLbV-fI5t77WhPtbwY9hrC5YLUIu9zGmETjcMLImNU3Xx_xV4O/exec";
+
+        // 頁面載入時，自動去抓人員名單
+        window.onload = async () => {
+            try {
+                const response = await fetch(ACTIVITY_GAS_URL);
+                const members = await response.json();
+                const select = document.getElementById('actMember');
+                select.innerHTML = members.map(m => `<option value="${m}">${m}</option>`).join('');
+            } catch (e) {
+                document.getElementById('actMember').innerHTML = '<option>名單載入失敗</option>';
+            }
+        };
+
+        async function saveActivity() {
+            const date = document.getElementById('actDate').value;
+            const time = document.getElementById('actTime').value;
+            const member = document.getElementById('actMember').value;
+            const btn = document.getElementById('saveBtn');
+
+            if (!date || !member) return alert("請完整填寫資料");
+
+            btn.innerText = "⌛ 處理中...";
+            btn.disabled = true;
+
+            try {
+                await fetch(ACTIVITY_GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ date, time, member })
+                });
+                alert("活動建立成功！");
+                location.reload(); // 重新整理
+            } catch (e) {
+                alert("建立失敗");
+                btn.innerText = "確認建立活動";
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
