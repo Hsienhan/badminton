@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人員管理 - Badminton Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #ffffff; }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; opacity: 0; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="p-4 bg-white min-h-screen">
+    <div class="max-w-md mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-black italic text-slate-800 uppercase tracking-tight">Member Cloud</h2>
+            <button onclick="fetchMembers()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase flex items-center shadow-sm active:scale-95 transition-all">
+                🔄 Sync List
+            </button>
+        </div>
+
+        <div class="bg-slate-50 p-4 rounded-[2rem] border border-slate-100 mb-8 flex gap-2">
+            <input type="text" id="memberName" placeholder="輸入球友姓名..." class="flex-1 bg-white p-4 rounded-2xl outline-none font-bold text-sm focus:ring-2 focus:ring-indigo-500/10 border border-transparent focus:border-indigo-100">
+            <button onclick="addMember()" id="addBtn" class="bg-slate-800 text-white px-6 rounded-2xl font-black text-sm active:scale-95 transition-all shadow-lg">
+                ADD
+            </button>
+        </div>
+
+        <div id="memberList" class="space-y-3">
+            <div class="flex justify-center py-10">
+                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 【重要】這裡請填入你那包整合了 config.gs 的 GAS 部署網址
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyrT9Pd4Ry2dNDhP3fLbV-fI5t77WhPtbwY9hrC5YLUIu9zGmETjcMLImNU3Xx_xV4O/exec";
+
+        // 讀取名單
+        async function fetchMembers() {
+            const list = document.getElementById('memberList');
+            try {
+                const response = await fetch(GAS_URL);
+                const members = await response.json();
+                
+                if (!members || members.length === 0) {
+                    list.innerHTML = '<p class="text-center py-10 text-slate-300 font-bold italic text-sm">NO MEMBERS FOUND</p>';
+                    return;
+                }
+
+                // 因為 GAS 的 doGet 回傳的是 ["姓名1", "姓名2"]，所以直接 map(name) 即可
+                list.innerHTML = members.map((name, index) => `
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-50 flex justify-between items-center animate-fade-in" style="animation-delay: ${index * 0.05}s">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-400 font-black text-[10px]">
+                                ${index + 1}
+                            </div>
+                            <div class="font-black text-slate-800">${name}</div>
+                        </div>
+                        <div class="text-[9px] font-black text-emerald-500 bg-emerald-50 px-2 py-1 rounded-md uppercase italic tracking-tighter">Verified</div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                list.innerHTML = '<p class="text-center py-10 text-red-400 font-bold italic text-sm">SYNC FAILED: CHECK GAS URL</p>';
+            }
+        }
+
+        // 新增人員
+        async function addMember() {
+            const nameField = document.getElementById('memberName');
+            const name = nameField.value.trim();
+            const btn = document.getElementById('addBtn');
+
+            if (!name) return alert("請輸入姓名！");
+
+            btn.innerText = "⏳";
+            btn.disabled = true;
+
+            try {
+                // 這裡發送 POST 時，必須帶著 action: "addMember" 讓整合版 GAS 判斷
+                await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        action: "addMember", 
+                        name: name 
+                    })
+                });
+                
+                nameField.value = '';
+                await fetchMembers(); // 成功後自動更新列表
+            } catch (e) {
+                alert("新增失敗，請確認網路或 GAS 權限。");
+            } finally {
+                btn.innerText = "ADD";
+                btn.disabled = false;
+            }
+        }
+
+        // 初始載入
+        window.onload = fetchMembers;
+    </script>
+</body>
+</html>
