@@ -2,89 +2,113 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>活動建立 - Badminton Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="p-4 bg-slate-50 min-h-screen">
+<body class="p-4 bg-white min-h-screen">
     <div class="max-w-md mx-auto">
-        <h2 class="text-xl font-black italic text-slate-800 uppercase mb-6">Create Event</h2>
-
-        <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 space-y-4">
+        <h2 class="text-xl font-black italic text-slate-800 uppercase mb-6 tracking-tight">Create Activity</h2>
+        
+        <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 space-y-4 mb-10">
             <div>
-                <label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-1 block">Date / 日期</label>
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-2 block mb-1">Date</label>
                 <input type="date" id="actDate" class="w-full bg-slate-50 p-4 rounded-2xl outline-none font-bold text-sm">
             </div>
-
             <div>
-                <label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-1 block">Time / 時段</label>
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-2 block mb-1">Time</label>
                 <select id="actTime" class="w-full bg-slate-50 p-4 rounded-2xl outline-none font-bold text-sm appearance-none">
-                    <option value="早場 (08:00-12:00)">早場 (08:00-12:00)</option>
-                    <option value="午場 (13:00-17:00)">午場 (13:00-17:00)</option>
-                    <option value="晚場 (18:00-22:00)">晚場 (18:00-22:00)</option>
+                    <option value="早場 (08-12)">早場 (08-12)</option>
+                    <option value="午場 (13-17)">午場 (13-17)</option>
+                    <option value="晚場 (18-22)">晚場 (18-22)</option>
                 </select>
             </div>
-
             <div>
-                <label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-1 block">Member / 參加人員</label>
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-2 block mb-1">Participant</label>
                 <select id="actMember" class="w-full bg-slate-50 p-4 rounded-2xl outline-none font-bold text-sm appearance-none">
-                    <option value="">載入人員名單中...</option>
+                    <option>載入名單中...</option>
                 </select>
             </div>
+            <button onclick="saveActivity()" id="saveBtn" class="w-full bg-slate-800 text-white p-5 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-all">確認建立活動</button>
+        </div>
 
-            <button onclick="saveActivity()" id="saveBtn" class="w-full bg-slate-800 text-white p-5 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-all">
-                確認建立活動
-            </button>
+        <div id="recordSection" class="hidden animate-fade-in">
+            <h3 class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-3 tracking-widest">Recent Records</h3>
+            <div id="activityRecords" class="space-y-3">
+                </div>
         </div>
     </div>
 
-
-
-
-
-
-
     <script>
-        const ACTIVITY_GAS_URL = "https://script.google.com/macros/s/AKfycbyrT9Pd4Ry2dNDhP3fLbV-fI5t77WhPtbwY9hrC5YLUIu9zGmETjcMLImNU3Xx_xV4O/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyrT9Pd4Ry2dNDhP3fLbV-fI5t77WhPtbwY9hrC5YLUIu9zGmETjcMLImNU3Xx_xV4O/exec";
 
-
-
-
-        // 頁面載入時，自動去抓人員名單
+        // 初始化：載入球友名單
         window.onload = async () => {
             try {
-                const response = await fetch(ACTIVITY_GAS_URL);
-                const members = await response.json();
-                const select = document.getElementById('actMember');
-                select.innerHTML = members.map(m => `<option value="${m}">${m}</option>`).join('');
+                const res = await fetch(GAS_URL);
+                const data = await res.json();
+                document.getElementById('actMember').innerHTML = data.map(n => `<option value="${n}">${n}</option>`).join('');
             } catch (e) {
-                document.getElementById('actMember').innerHTML = '<option>名單載入失敗</option>';
+                document.getElementById('actMember').innerHTML = `<option>讀取名單失敗</option>`;
             }
         };
 
+        // 儲存活動
         async function saveActivity() {
             const date = document.getElementById('actDate').value;
             const time = document.getElementById('actTime').value;
             const member = document.getElementById('actMember').value;
             const btn = document.getElementById('saveBtn');
 
-            if (!date || !member) return alert("請完整填寫資料");
+            if (!date || !member) return alert("請完整填寫日期與人員");
 
-            btn.innerText = "⌛ 處理中...";
+            btn.innerText = "⏳ 建立中...";
             btn.disabled = true;
 
             try {
-                await fetch(ACTIVITY_GAS_URL, {
+                const response = await fetch(GAS_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ date, time, member })
+                    body: JSON.stringify({ 
+                        action: "addActivity", // 關鍵：確保與 GS 端對應
+                        date: date, 
+                        time: time, 
+                        member: member 
+                    })
                 });
-                alert("活動建立成功！");
-                location.reload(); // 重新整理
+                
+                const result = await response.json();
+
+                if (result.status === "success") {
+                    addRecordToUI(date, time, member);
+                    alert("✅ 活動建立成功！");
+                } else {
+                    alert("❌ 失敗: " + result.message);
+                }
             } catch (e) {
-                alert("建立失敗");
+                alert("❌ 連線異常，請確認 GAS 網址與部署版本");
+            } finally {
                 btn.innerText = "確認建立活動";
                 btn.disabled = false;
             }
+        }
+
+        // 將建立的內容顯示在下方
+        function addRecordToUI(date, time, member) {
+            const container = document.getElementById('recordSection');
+            const list = document.getElementById('activityRecords');
+            container.classList.remove('hidden');
+
+            const card = document.createElement('div');
+            card.className = "bg-emerald-50 p-5 rounded-2xl border border-emerald-100 flex justify-between items-center animate-bounce-short";
+            card.innerHTML = `
+                <div>
+                    <p class="text-[10px] font-black text-emerald-600 uppercase mb-1">${date} · ${time}</p>
+                    <p class="font-black text-slate-800">${member}</p>
+                </div>
+                <div class="bg-white px-3 py-1 rounded-lg shadow-sm">
+                    <span class="text-[9px] font-black text-slate-400 uppercase italic">SUCCESS</span>
+                </div>
+            `;
+            list.prepend(card); // 新建立的排在最上面
         }
     </script>
 </body>
