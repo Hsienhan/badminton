@@ -2,72 +2,70 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>羽球管理系統 - Hubert</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Badminton Pro - 總控台</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; overflow: hidden; }
-        
-        /* 讓 iframe 鋪滿中間區域，扣除頂部標題與底部選單高度 */
-        iframe { width: 100%; height: calc(100vh - 130px); border: none; }
-        
-        /* 磨砂玻璃效果的底部導覽列 */
-        .glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-        .nav-active { color: #4f46e5; position: relative; }
-        .nav-active::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 12px; height: 3px; background: #4f46e5; border-radius: 2px; }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; }
+        .active-tab { color: #4f46e5 !important; } /* Indigo 600 */
+        .active-bar { display: block !important; }
+        /* 讓 iframe 填滿剩下空間 */
+        .content-area { height: calc(100vh - 140px); }
     </style>
 </head>
-<body>
+<body class="overflow-hidden">
 
-    <header class="h-14 bg-white border-b border-slate-100 flex items-center px-6 justify-between">
-        <div class="flex items-center gap-2">
-            <div class="w-2 h-6 bg-indigo-600 rounded-full"></div>
-            <h1 class="font-black italic text-slate-800 tracking-tighter uppercase">Badminton Pro</h1>
-        </div>
-        <div class="text-[10px] font-bold text-slate-300 bg-slate-50 px-3 py-1 rounded-full border border-slate-100 uppercase tracking-widest">
-            V2.0 Cloud
-        </div>
+    <header class="p-4 bg-white/80 backdrop-blur-md sticky top-0 z-10 flex justify-between items-center border-b border-slate-100">
+        <h1 class="text-xl font-black italic text-slate-800 tracking-tighter uppercase">Badminton Pro</h1>
+        <div class="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-black uppercase italic">Live Cloud</div>
     </header>
 
-    <main>
-        <iframe id="contentFrame" src="人員.html"></iframe>
+    <main class="content-area w-full max-w-md mx-auto p-2">
+        <iframe id="mainFrame" src="活動.html" class="w-full h-full rounded-[2.5rem] shadow-2xl border-none bg-white"></iframe>
     </main>
 
-    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md glass shadow-2xl rounded-[2.5rem] flex p-2 border border-white/50 z-50">
-        <button onclick="switchTab('人員.html', this)" class="nav-btn flex-1 py-3 text-sm font-bold transition-all nav-active">
-            人員
-        </button>
-        <button onclick="switchTab('活動.html', this)" class="nav-btn flex-1 py-3 text-sm font-bold text-slate-400 transition-all">
-            活動
-        </button>
-        <button onclick="switchTab('分帳.html', this)" class="nav-btn flex-1 py-3 text-sm font-bold text-slate-400 transition-all">
-            分帳
-        </button>
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-slate-100 px-6 pb-6 pt-3">
+        <div class="max-w-md mx-auto flex justify-around items-center">
+            
+            <button onclick="changePage('人員.html', this)" class="nav-btn flex flex-col items-center group text-slate-400">
+                <span class="text-[10px] font-black uppercase tracking-widest mb-1 group-active:scale-90 transition-all">Member</span>
+                <div class="indicator w-4 h-1 bg-indigo-600 rounded-full hidden"></div>
+            </button>
+
+            <button onclick="changePage('活動.html', this)" class="nav-btn flex flex-col items-center group active-tab">
+                <span class="text-[10px] font-black uppercase tracking-widest mb-1 group-active:scale-90 transition-all">Activity</span>
+                <div class="indicator w-4 h-1 bg-indigo-600 rounded-full active-bar"></div>
+            </button>
+
+            <button onclick="changePage('分帳.html', this)" class="nav-btn flex flex-col items-center group text-slate-400">
+                <span class="text-[10px] font-black uppercase tracking-widest mb-1 group-active:scale-90 transition-all">Split</span>
+                <div class="indicator w-4 h-1 bg-indigo-600 rounded-full hidden"></div>
+            </button>
+
+        </div>
     </nav>
 
     <script>
-        /**
-         * 切換分頁邏輯
-         * @param {string} url - 子網頁的檔名
-         * @param {HTMLElement} btn - 被點擊的按鈕對象
-         */
-        function switchTab(url, btn) {
-            const frame = document.getElementById('contentFrame');
-            
-            // 1. 切換 iframe 顯示內容
+        function changePage(url, btn) {
+            // 1. 切換 iframe 內容
+            const frame = document.getElementById('mainFrame');
             frame.src = url;
 
-            // 2. 更新導覽按鈕顏色樣式
-            document.querySelectorAll('.nav-btn').forEach(b => {
-                b.classList.remove('nav-active', 'text-indigo-600');
-                b.classList.add('text-slate-400');
-            });
-            btn.classList.add('nav-active', 'text-indigo-600');
-            btn.classList.remove('text-slate-400');
+            // 2. 更新按鈕 UI 樣式
+            const allBtns = document.querySelectorAll('.nav-btn');
+            const allIndicators = document.querySelectorAll('.indicator');
 
-            // 3. 震動回饋 (限手機設備支援)
-            if (navigator.vibrate) navigator.vibrate(5);
+            allBtns.forEach(b => b.classList.remove('active-tab', 'text-slate-400'));
+            allBtns.forEach(b => b.classList.add('text-slate-400'));
+            allIndicators.forEach(i => i.classList.remove('active-bar'));
+            allIndicators.forEach(i => i.classList.add('hidden'));
+
+            // 設定當前選中的按鈕
+            btn.classList.remove('text-slate-400');
+            btn.classList.add('active-tab');
+            btn.querySelector('.indicator').classList.remove('hidden');
+            btn.querySelector('.indicator').classList.add('active-bar');
         }
     </script>
 </body>
